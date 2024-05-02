@@ -156,7 +156,7 @@ commandRaw Buttons::getCommandRaw() {
 
   // schlecht eingebauter Ausschalter....
   
-  if (digitalread(powerswitchPin) && millis()> 3000)
+  if (digitalRead(powerswitchPin) && millis()> 3000)
   {ret = commandRaw::pauseLong;}
 
    // schlecht eingebauter Ausschalter....
