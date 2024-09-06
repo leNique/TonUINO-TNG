@@ -67,6 +67,12 @@ public:
 
   uint16_t getNumTracksInFolder() const {return numTracksInFolder; }
 
+#ifdef BT_MODULE
+  bool isBtModuleOn() { return btModuleOn; }
+  void switchBtModuleOnOff();
+  void btModulePairing();
+#endif
+
 private:
 
   void checkStandby();
@@ -89,7 +95,7 @@ private:
   RotaryEncoder        rotaryEncoder       {settings};
 #endif
 #ifdef POTI
-  Poti                 poti                {settings, mp3};
+  Poti                 poti                {mp3};
 #endif
   Commands             commands            {
                                             settings
@@ -116,8 +122,7 @@ private:
 
   Modifier             noneModifier        {};
   SleepTimer           sleepTimer          {};
-  FreezeDance          freezeDance         {};
-  Locked               locked              {};
+  DanceGame            danceGame           {};
   ToddlerMode          toddlerMode         {};
   KindergardenMode     kindergardenMode    {};
   RepeatSingleModifier repeatSingleModifier{};
@@ -129,6 +134,11 @@ private:
   folderSettings       myFolder            {};
   bool                 myFolderIsCard      {};
   uint16_t             numTracksInFolder   {};
+
+#ifdef BT_MODULE
+  bool                 btModuleOn          {};
+  Timer                btModulePairingTimer{};
+#endif
 };
 
 #endif /* SRC_TONUINO_HPP_ */

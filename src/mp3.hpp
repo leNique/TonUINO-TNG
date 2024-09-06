@@ -27,6 +27,10 @@ class Mp3Notify;
 #define DFMiniMp3_T_CHIP_VARIANT Mp3ChipIncongruousNoAck
 #endif
 
+#if defined(DFMiniMp3_T_CHIP_GD3200B) or defined(DFMiniMp3_T_CHIP_LISP3) or defined(DFMiniMp3_T_CHIP_MH2024K24SS_MP3_TF_16P_V3_0)
+#define DFMiniMp3_IGNORE_ONPLAYFINISHED_FOR_ADV
+#endif
+
 // define a handy type using serial and our notify class
 #ifdef DFMiniMp3_T_CHIP_VARIANT
 using DfMp3 = DFMiniMp3<SerialType, Mp3Notify, DFMiniMp3_T_CHIP_VARIANT, 4000>;
@@ -53,6 +57,7 @@ enum class mp3Tracks: uint16_t {
   t_321_mode_repeat_last_card  = 321,
   t_322_mode_quiz_game         = 322,
   t_323_mode_memory_game       = 323,
+  t_324_mode_switch_bt         = 324,
   t_327_select_file            = 327,
   t_328_select_first_file      = 328,
   t_329_select_last_file       = 329,
@@ -131,6 +136,10 @@ enum class mp3Tracks: uint16_t {
   t_963_timer_30               = 963,
   t_964_timer_60               = 964,
   t_965_timer_disabled         = 965,
+  t_966_dance_pause_intro      = 966,
+  t_967_dance_pause_15_30      = 967,
+  t_968_dance_pause_25_40      = 968,
+  t_969_dance_pause_35_50      = 969,
   t_970_modifier_Intro         = 970,
   t_971_modifier_SleepTimer    = 971,
   t_972_modifier_FreezeDance   = 972,
@@ -138,6 +147,7 @@ enum class mp3Tracks: uint16_t {
   t_974_modifier_Toddler       = 974,
   t_975_modifier_KinderGarden  = 975,
   t_976_modifier_repeat1       = 976,
+  t_977_modifier_bluetooth     = 977,
   t_980_admin_lock_intro       = 980,
   t_981_admin_lock_disabled    = 981,
   t_982_admin_lock_card        = 982,
@@ -159,9 +169,15 @@ enum class advertTracks: uint16_t {
   t_300_freeze_into            = 300,
   t_301_freeze_freeze          = 301,
   t_302_sleep                  = 302,
-  t_303_locked                 = 303,
+  t_303_fi_wa_ai               = 303,
   t_304_buttonslocked          = 304,
   t_305_kindergarden           = 305,
+  t_306_fire                   = 306,
+  t_307_water                  = 307,
+  t_308_air                    = 308,
+  t_320_bt_on                  = 320,
+  t_321_bt_off                 = 321,
+  t_322_bt_pairing             = 322,
 };
 
 // implement a notification class,
@@ -198,7 +214,7 @@ public:
   void clearAllQueue() { clearFolderQueue(); clearMp3Queue(); }
   bool isPlayingFolder() { return playing == play_folder; }
   bool isPlayingMp3   () { return playing == play_mp3   ; }
-#ifdef DFMiniMp3_T_CHIP_LISP3
+#ifdef DFMiniMp3_IGNORE_ONPLAYFINISHED_FOR_ADV
   bool resetPlayingAdv() { bool ret = advPlaying; advPlaying = false; return ret; }
 #endif
   // firstTrack and lastTrack -> index in folder starting with 1
@@ -282,7 +298,7 @@ private:
   Timer                startTrackTimer{};
   Timer                missingOnPlayFinishedTimer{};
   bool                 isPause{};
-#ifdef DFMiniMp3_T_CHIP_LISP3
+#ifdef DFMiniMp3_IGNORE_ONPLAYFINISHED_FOR_ADV
   bool                 advPlaying{false};
 #endif
 

@@ -140,7 +140,7 @@ void ChMode::entry() {
 
   folder = folderSettings{};
 
-  numberOfOptions   = 13;
+  numberOfOptions   = 14;
   startMessage      = mp3Tracks::t_310_select_mode;
   messageOffset     = mp3Tracks::t_310_select_mode;
   preview           = false;
@@ -169,7 +169,7 @@ void ChMode::react(command_e const &cmd_e) {
       transit<finished>();
       return;
     }
-    if (folder.mode == pmode_t::repeat_last) {
+    if (folder.mode == pmode_t::repeat_last || folder.mode == pmode_t::switch_bt) {
       folder.folder = 0xff; // dummy value > 0 to make readCard() returning true
       transit<finished>();
       return;
@@ -480,6 +480,12 @@ bool Base::readCard() {
   case Chip_card::readCardEvent::none : return false;
 
   case Chip_card::readCardEvent::known:
+#ifdef BT_MODULE
+    if (lastCardRead.mode == pmode_t::switch_bt) {
+      tonuino.switchBtModuleOnOff();
+      return false;
+    }
+#endif
     if (lastCardRead.folder == 0) {
       if (lastCardRead.mode == pmode_t::admin_card) {
         LOG(state_log, s_debug, str_Base(), str_to(), str_Admin_Entry());
@@ -515,6 +521,12 @@ bool Base::readCard() {
 bool Base::handleShortcut(uint8_t shortCut) {
   folderSettings sc_folderSettings = settings.getShortCut(shortCut);
   if (sc_folderSettings.folder != 0) {
+#ifdef BT_MODULE
+    if (sc_folderSettings.mode == pmode_t::switch_bt) {
+      tonuino.switchBtModuleOnOff();
+      return false; // do not end the current play
+    }
+#endif // BT_MODULE
     if (sc_folderSettings.mode != pmode_t::repeat_last)
       tonuino.setMyFolder(sc_folderSettings, false /*myFolderIsCard*/);
     if (tonuino.getFolder() != 0) {
@@ -722,6 +734,11 @@ void Play::react(command_e const &cmd_e) {
     transit<Pause>();
     return;
   case command::track:
+#ifdef BT_MODULE
+    if (tonuino.isBtModuleOn())
+      tonuino.btModulePairing();
+    else
+#endif
     tonuino.playTrackNumber();
     break;
   case command::volume_up:
@@ -881,6 +898,7 @@ void StartPlay::react(command_e const &/*cmd_e*/) {
 void Quiz::entry() {
   LOG(state_log, s_info, str_enter(), str_Quiz());
   tonuino.disableStandbyTimer();
+  tonuino.resetActiveModifier();
   tonuino.playFolder();
   numAnswer   = tonuino.getMyFolder().special;
   numSolution = tonuino.getMyFolder().special2;
@@ -1122,6 +1140,7 @@ void Quiz::finish() {
 void Memory::entry() {
   LOG(state_log, s_info, str_enter(), str_Memory());
   tonuino.disableStandbyTimer();
+  tonuino.resetActiveModifier();
   tonuino.playFolder();
   first  = 0;
   second = 0;
@@ -1616,7 +1635,7 @@ void Admin_SimpleSetting::react(command_e const &cmd_e) {
 void Admin_ModCard::entry() {
   LOG(state_log, s_info, str_enter(), str_Admin_ModCard());
 
-  numberOfOptions   = 6;
+  numberOfOptions   = 7;
   startMessage      = mp3Tracks::t_970_modifier_Intro;
   messageOffset     = mp3Tracks::t_970_modifier_Intro;
   preview           = false;
@@ -1648,16 +1667,24 @@ void Admin_ModCard::react(command_e const &cmd_e) {
   case get_mode           :
     if (Commands::isSelect(cmd) && (currentValue != 0)) {
       folder.mode = static_cast<pmode_t>(currentValue);
-      if (folder.mode != pmode_t::sleep_timer) {
-        mp3.clearMp3Queue();
-        current_subState = start_writeCard;
-      }
-      else {
+
+      if (folder.mode == pmode_t::sleep_timer) {
         numberOfOptions   = 4;
         startMessage      = mp3Tracks::t_960_timer_intro;
         messageOffset     = mp3Tracks::t_960_timer_intro;
         VoiceMenu::entry();
         current_subState = get_sleeptime_timer;
+      }
+      else if (folder.mode == pmode_t::freeze_dance || folder.mode == pmode_t::fi_wa_ai) {
+        numberOfOptions   = 3;
+        startMessage      = mp3Tracks::t_966_dance_pause_intro;
+        messageOffset     = mp3Tracks::t_966_dance_pause_intro;
+        VoiceMenu::entry();
+        current_subState = get_play_time;
+      }
+      else {
+        mp3.clearMp3Queue();
+        current_subState = start_writeCard;
       }
     }
     break;
@@ -1688,6 +1715,12 @@ void Admin_ModCard::react(command_e const &cmd_e) {
     if (Commands::isSelect(cmd) && (currentValue != 0)) {
       if (currentValue == 2)
         folder.special += 0x80;
+      current_subState = start_writeCard;
+    }
+    break;
+  case get_play_time:
+    if (Commands::isSelect(cmd) && (currentValue != 0)) {
+      folder.special = currentValue-1;
       current_subState = start_writeCard;
     }
     break;

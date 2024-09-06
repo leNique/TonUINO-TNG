@@ -24,14 +24,16 @@ enum class pmode_t: uint8_t {
   repeat_last   =  11,
   quiz_game     =  12,
   memory_game   =  13,
+  switch_bt     =  14,
 
   // modifier modes
   sleep_timer   =   1,
   freeze_dance  =   2,
-  locked        =   3,
+  fi_wa_ai      =   3,
   toddler       =   4,
   kindergarden  =   5,
   repeat_single =   6,
+  bt_module     =   7,
 
   admin_card    = 0xff,
 };

@@ -4,43 +4,48 @@
 #include <Arduino.h>
 #include "gpioHelper.hpp"
 
+// ######################################################################
 // ####### default pins #################################################
+// ######################################################################
 
-/* #### Classic/Every ######################################################
- *                         | A0| A1| A2| A3| A4| A5| A6| A7| D5| D6| D7| D8|
- * ------------------------+---+---+---+---+---+---+---+---+---+---+---+---+
- * 3 Button                | P | U | D |   |   |   |   |   |   |   |   |   |
- * 5 Button                | P | V+| V-| U | D |   |   |   |   |   |   |   |
- * 3x3 Button Board        | P | U | D | A |   |   |   |   |   |   |   |   |
- * Open pin for random     |   |   |   |   |   |   |   | x |   |   |   |   |
- * Rotary encoder          |   |   |   |CLK| DT|   |   |   |   |   |   |   |
- * Poti                    |   |   |   | x |   |   |   |   |   |   |   |   |
- * Neo Ring/LED animat.    |   |   |   |   |   |   |   |   | x |   |   |   |
- * Speaker off             |   |   |   |   |   |   |   |   |   | x |   |   |
- * Shutdown                |   |   |   |   |   |   |   |   |   |   | x |   |
- * headphone jack detection|   |   |   |   |   |   |   |   |   |   |   | x |
- * special start shortcut  |   |   |   |   |   |   | x |   |   |   |   |   |
- * bat voltage measurement |   |   |   |   |   | x |   |   |   |   |   |   |
- * #########################################################################
+/* #### Classic/Every ######################################################################
+ *                         | A0| A1| A2| A3| A4| A5| A6| A7| D0| D1| D2| D3| D5| D6| D7| D8|
+ * ------------------------+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+
+ * Com to DF Player        |   |   |   |   |   |   |   |   |RX*|TX*| RX| TX|   |   |   |   |
+ * 3 Button                | P | U | D |   |   |   |   |   |   |   |   |   |   |   |   |   |
+ * 5 Button                | P | V+| V-| U | D |   |   |   |   |   |   |   |   |   |   |   |
+ * 3x3 Button Board        | P | U | D | A |   |   |   |   |   |   |   |   |   |   |   |   |
+ * Open pin for random     |   |   |   |   |   |   |   | x |   |   |   |   |   |   |   |   |
+ * Rotary encoder          |   |   |   |CLK| DT|   |   |   |   |   |   |   |   |   |   |   |
+ * Poti                    |   |   |   | x |   |   |   |   |   |   |   |   |   |   |   |   |
+ * Neo Ring/LED animat.    |   |   |   |   |   |   |   |   |   |   |(x)|   | x |   |   |   |
+ * Speaker off             |   |   |   |   |   |   |   |   |   |   |   |   |   | x |   |   |
+ * Shutdown                |   |   |   |   |   |   |   |   |   |   |   |   |   |   | x |   |
+ * headphone jack detection|   |   |   |   |   |   |   |   |   |   |   |   |   |   |   | x |
+ * special start shortcut  |   |   |   |   |   |   | x |   |   |   |   |   |   |   |   |   |
+ * bat voltage measurement |   |   |   |   |   | x |   |   |   |   |   |   |   |   |   |   |
+ * #########################################################################################
+ *
+ * (*) Hardware Serial on Every
  */
 
-/* ### AiOplus #####################################################################################
- *                         | A0| A1| A2| A3| A4| A5| A6| A7|D10|D19|D21|D27|D31|D32|D33|D36|D37|A14|
- *                         |   |   |   |   |   |   |   |   |PB2|PC5|PC7|PD5|PE1|PE2|PE3|PF2|PF3|PF4|
- * ------------------------+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+
- * 3 Button                | P | D | U |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |
- * 5 Button                | P | D | U | V-| V+|   |   |   |   |   |   |   |   |   |   |   |   |   |
- * 3x3 Button Board        | P |   | A | D | U |   |   |   |   |   |   |   |   |   |   |   |   |   |
- * Open pin for random     |   |   |   |   |   |   |   | x |   |   |   |   |   |   |   |   |   |   |
- * Rotary encoder          |   |   |   |   |   |   |   |   |   |   |   |   |CLK| DT|   |CLK| DT|   |
- * Poti                    |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   | x |
- * Neo Ring/LED animat.    |   |   |   |   |   |   |   |   | x |   |   |   |   |   |   |   |   |   |
- * Speaker off             |   |   |   |   |   |   |   |   |   | x |   |   |   |   |   |   |   |   |
- * Shutdown                |   |   |   |   |   |   |   |   |   |   |   | x |   |   |   |   |   |   |
- * headphone jack detection|   |   |   |   |   |   |   |   |   |   | x |   |   |   |   |   |   |   |
- * special start shortcut  |   |   |   |   |   |   |   |   |   |   |   |   |   |   | x |   |   |   |
- * bat voltage measurement |   |   |   |   |   |   | x |   |   |   |   |   |   |   |   |   |   |   |
- * #################################################################################################
+/* ### AiOplus #########################################################################################
+ *                         | A0| A1| A2| A3| A4| A5| A6| A7|D10|D14|D19|D21|D27|D31|D32|D33|D36|D37|A14|
+ *                         |   |   |   |   |   |   |   |   |PB2|PC0|PC5|PC7|PD5|PE1|PE2|PE3|PF2|PF3|PF4|
+ * ------------------------+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+
+ * 3 Button                | P | D | U |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |
+ * 5 Button                | P | D | U | V-| V+|   |   |   |   |   |   |   |   |   |   |   |   |   |   |
+ * 3x3 Button Board        | P |   | A | D | U |   |   |   |   |   |   |   |   |   |   |   |   |   |   |
+ * Open pin for random     |   |   |   |   |   |   |   | x |   |   |   |   |   |   |   |   |   |   |   |
+ * Rotary encoder          |   |   |   |   |   |   |   |   |   |   |   |   |   |CLK| DT|   |CLK| DT|   |
+ * Poti                    |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   | x |
+ * Neo Ring/LED animat.    |   |   |   |   |   |   |   |   | x |(x)|   |   |   |   |   |   |   |   |   |
+ * Speaker off             |   |   |   |   |   |   |   |   |   |   | x |   |   |   |   |   |   |   |   |
+ * Shutdown                |   |   |   |   |   |   |   |   |   |   |   |   | x |   |   |   |   |   |   |
+ * headphone jack detection|   |   |   |   |   |   |   |   |   |   |   | x |   |   |   |   |   |   |   |
+ * special start shortcut  |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   | x |   |   |   |
+ * bat voltage measurement |   |   |   |   |   |   | x |   |   |   |   |   |   |   |   |   |   |   |   |
+ * #####################################################################################################
  */
 
 /* ### AiO #################################################################
@@ -68,6 +73,7 @@
  */
 //#define TonUINO_Classic
 //#define TonUINO_Every
+//#define TonUINO_Every_4808
 //#define ALLinONE
 //#define ALLinONE_Plus
 
@@ -106,13 +112,18 @@
  * um einen speziellen Chip auf dem DfMiniMp3 Player zu ünterstützen bitte in eine der nächste Zeilen den Kommentar entfernen
  *
  * GD3200B:     bad behavior of getFolderTrackCount() - ignores the parameter folder
+ *              bad behavior of callback OnPlayFinished - it is also called on advertise tracks
  * MH2024K16SS: no checksums
- * LISP3:       bad behavior of callback OnPlayFinished - it is also called on advertise tracks (also on some MH2024K24SS)
+ * LISP3:       bad behavior of callback OnPlayFinished - it is also called on advertise tracks
+ * MP3-TF-16P V3.0 with MH2024K24SS:
+ *              very slow
+ *              bad behavior of callback OnPlayFinished - it is also called on advertise tracks
  * LKP Player:  no ACK for requests (use Mp3ChipIncongruousNoAck for them)
  */
 //#define DFMiniMp3_T_CHIP_GD3200B
 //#define DFMiniMp3_T_CHIP_MH2024K16SS
 //#define DFMiniMp3_T_CHIP_LISP3
+//#define DFMiniMp3_T_CHIP_MH2024K24SS_MP3_TF_16P_V3_0
 #define DFMiniMp3_T_CHIP_Mp3ChipIncongruousNoAck
 
 // ######################################################################
@@ -264,6 +275,18 @@ inline constexpr uint8_t   specialStartShortcutTrack   = 1;
 
 // ######################################################################
 
+/* uncomment the below line to enable support for BT module
+ * um die Unterstützung des BT Modules zu aktivieren, in der nächste Zeile den Kommentar entfernen
+ */
+//#define BT_MODULE
+inline constexpr uint8_t   btModuleOnPin               =  2; // D2
+inline constexpr levelType btModuleOnPinType           = levelType::activeHigh;
+inline constexpr uint8_t   btModulePairingPin          =  3; // D3
+inline constexpr levelType btModulePairingPinType      = levelType::activeHigh;
+inline constexpr unsigned long btModulePairingPulse    = 500;
+
+// ######################################################################
+
 /* uncomment the below line to enable battery voltage measurement (not for ALLinONE, not recommended for TonUINO_Classic)
  * um die Batterie Spannungsmessung zu aktivieren, in der nächste Zeile den Kommentar entfernen
  * (nicht für ALLinONE, nicht empfohlen für TonUINO_Classic)
@@ -280,6 +303,9 @@ inline constexpr float   voltageMeasurementCorrection  = 2.075; // Spannungsteil
 inline constexpr float   voltageMeasurementCorrection  = 1.960; // Spannungsteiler 100k/100k
 #endif
 #ifdef TonUINO_Every
+inline constexpr float   voltageMeasurementCorrection  = 2.007; // Spannungsteiler 100k/100k
+#endif
+#ifdef TonUINO_Every_4808
 inline constexpr float   voltageMeasurementCorrection  = 2.007; // Spannungsteiler 100k/100k
 #endif
 
@@ -317,7 +343,7 @@ inline constexpr uint32_t  buttonLongPressRepeat =  200; // timeout for long pre
  ** Classic ****************************************************************
  ***************************************************************************/
 
-#if defined(TonUINO_Classic) or defined(TonUINO_Every)
+#if defined(TonUINO_Classic) or defined(TonUINO_Every) or defined(TonUINO_Every_4808)
 // ####### buttons #####################################
 
 inline constexpr uint8_t   buttonPausePin  = A0;
@@ -351,7 +377,7 @@ inline constexpr uint8_t  cardRemoveDelay =  3;
 // ####### mp3 #########################################
 
 #ifdef DFPlayerUsesHardwareSerial
-inline constexpr HardwareSerial &dfPlayer_serial         = Serial1;
+inline constexpr HardwareSerial &dfPlayer_serial         = Serial1; // D0 RX, D1 TX (Every)
 #else
 inline constexpr uint8_t       dfPlayer_receivePin      = 2;
 inline constexpr uint8_t       dfPlayer_transmitPin     = 3;
@@ -360,7 +386,13 @@ inline constexpr uint8_t       dfPlayer_transmitPin     = 3;
 inline constexpr uint8_t       maxTracksInFolder        = 255;
 inline constexpr uint8_t       dfPlayer_busyPin         = 4;
 inline constexpr levelType     dfPlayer_busyPinType     = levelType::activeHigh;
-inline constexpr unsigned long dfPlayer_timeUntilStarts = 1000;
+#if defined(DFMiniMp3_T_CHIP_MH2024K24SS_MP3_TF_16P_V3_0)
+inline constexpr unsigned long dfPlayer_timeUntilStarts = 2500;
+#elif defined(DFMiniMp3_T_CHIP_GD3200B)
+inline constexpr unsigned long dfPlayer_timeUntilStarts = 1500;
+#else
+inline constexpr unsigned long dfPlayer_timeUntilStarts = 1200;
+#endif
 
 // ####### tonuino #####################################
 
@@ -374,8 +406,7 @@ inline constexpr levelType     shutdownPinType  = levelType::activeLow;
 #endif
 inline constexpr uint8_t       openAnalogPin    = A7;
 inline constexpr unsigned long cycleTime        = 50;
-
-#endif /* TonUINO_Classic or TonUINO_Every */
+#endif /* TonUINO_Classic or TonUINO_Every or TonUINO_Every_4808 */
 
 /***************************************************************************
  ** AiO plus ***************************************************************

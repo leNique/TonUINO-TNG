@@ -41,7 +41,7 @@ void Tonuino::setup() {
 #endif
 
 #if defined(BUTTONS3X3) or defined(BAT_VOLTAGE_MEASUREMENT)
-#if defined(ALLinONE_Plus) or defined(TonUINO_Every)
+#if defined(ALLinONE_Plus) or defined(TonUINO_Every) or defined(TonUINO_Every_4808)
   analogReference(INTERNAL2V5);
 #endif
 #ifdef ALLinONE
@@ -69,6 +69,12 @@ void Tonuino::setup() {
   pinMode(specialStartShortcutPin, INPUT);
 #endif
 
+#ifdef BT_MODULE
+  pinMode(btModuleOnPin          , OUTPUT);
+  pinMode(btModulePairingPin     , OUTPUT);
+  digitalWrite(btModuleOnPin     , getLevel(btModuleOnPinType     , level::inactive));
+  digitalWrite(btModulePairingPin, getLevel(btModulePairingPinType, level::inactive));
+#endif // BT_MODULE
 
 #ifdef NEO_RING
   ring.init();
@@ -133,6 +139,14 @@ void Tonuino::loop() {
   unsigned long  start_cycle = millis();
   checkStandby();
 
+  static bool is_playing = false;
+  LOG_CODE(play_log, s_info, {
+    if (is_playing != mp3.isPlaying()) {
+      is_playing = !is_playing;
+      LOG(play_log, s_info, F("isPlaying: "), is_playing);
+    }
+  } );
+
 #ifdef BAT_VOLTAGE_MEASUREMENT
   if (batVoltage.check())
     shutdown();
@@ -174,6 +188,12 @@ void Tonuino::loop() {
   else // admin menu
     ring.call_on_admin();
 #endif // NEO_RING
+
+#ifdef BT_MODULE
+  if (btModulePairingTimer.isActive() && btModulePairingTimer.isExpired())
+    digitalWrite(btModulePairingPin, getLevel(btModulePairingPinType, level::inactive));
+#endif // BT_MODULE
+
 
   unsigned long  stop_cycle = millis();
 
@@ -341,6 +361,25 @@ void Tonuino::shutdown() {
   sleep_mode();
 }
 
+#ifdef BT_MODULE
+void Tonuino::switchBtModuleOnOff() {
+  btModuleOn = not btModuleOn;
+  if (btModuleOn)
+    mp3.playAdvertisement(advertTracks::t_320_bt_on , false/*olnyIfIsPlaying*/);
+  else
+    mp3.playAdvertisement(advertTracks::t_321_bt_off, false/*olnyIfIsPlaying*/);
+  digitalWrite(btModuleOnPin, getLevel(btModuleOnPinType, btModuleOn ? level::active : level::inactive));
+}
+
+void Tonuino::btModulePairing() {
+  if (not btModulePairingTimer.isActive()) {
+    mp3.playAdvertisement(advertTracks::t_322_bt_pairing, false/*olnyIfIsPlaying*/);
+    btModulePairingTimer.start(btModulePairingPulse);
+    digitalWrite(btModulePairingPin, getLevel(btModulePairingPinType, level::active));
+  }
+}
+#endif // BT_MODULE
+
 bool Tonuino::specialCard(const folderSettings &nfcTag) {
   LOG(card_log, s_debug, F("special card, mode = "), static_cast<uint8_t>(nfcTag.mode));
   if (activeModifier->getActive() == nfcTag.mode) {
@@ -350,6 +389,16 @@ bool Tonuino::specialCard(const folderSettings &nfcTag) {
     return true;
   }
 
+#ifdef QUIZ_GAME
+  if (SM_tonuino::is_in_state<Quiz>() && nfcTag.mode != pmode_t::bt_module)
+    return false;
+#endif // QUIZ_GAME
+#ifdef MEMORY_GAME
+  if (SM_tonuino::is_in_state<Memory>() && nfcTag.mode != pmode_t::bt_module)
+    return false;
+#endif // MEMORY_GAME
+
+
   switch (nfcTag.mode) {
   case pmode_t::sleep_timer:  LOG(card_log, s_info, F("act. sleepTimer"));
                               mp3.playAdvertisement(advertTracks::t_302_sleep            , false/*olnyIfIsPlaying*/);
@@ -358,12 +407,12 @@ bool Tonuino::specialCard(const folderSettings &nfcTag) {
 
   case pmode_t::freeze_dance: LOG(card_log, s_info, F("act. freezeDance"));
                               mp3.playAdvertisement(advertTracks::t_300_freeze_into      , false/*olnyIfIsPlaying*/);
-                              activeModifier = &freezeDance;
+                              activeModifier = &danceGame;
                               break;
 
-  case pmode_t::locked:       LOG(card_log, s_info, F("act. locked"));
-                              mp3.playAdvertisement(advertTracks::t_303_locked           , false/*olnyIfIsPlaying*/);
-                              activeModifier = &locked;
+  case pmode_t::fi_wa_ai:     LOG(card_log, s_info, F("act. FeWaLu"));
+                              mp3.playAdvertisement(advertTracks::t_303_fi_wa_ai         , false/*olnyIfIsPlaying*/);
+                              activeModifier = &danceGame;
                               break;
 
   case pmode_t::toddler:      LOG(card_log, s_info, F("act. toddlerMode"));
@@ -381,9 +430,15 @@ bool Tonuino::specialCard(const folderSettings &nfcTag) {
                               activeModifier = &repeatSingleModifier;
                               break;
 
+#ifdef BT_MODULE
+  case pmode_t::bt_module:    LOG(card_log, s_info, F("toggle bt module from "), btModuleOn);
+                              switchBtModuleOnOff();
+                              return true;
+#endif // BT_MODULE
+
   default:                    return false;
   }
-  activeModifier->init(nfcTag.special);
+  activeModifier->init(nfcTag.mode, nfcTag.special);
   return true;
 }
 
