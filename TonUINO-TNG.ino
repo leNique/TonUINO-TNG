@@ -70,8 +70,8 @@ void loop()
 {
   Tonuino::getTonuino().loop();
 
-  if (millis()>3000 && digitalRead(powerswitchPin))
+ /**/ if (millis()>3000 && digitalRead(powerswitchPin))
   {
-    digitalWrite(shutdownPin,1);
-  }
+    digitalWrite(shutdownPin,0);
+  }*/
 }
